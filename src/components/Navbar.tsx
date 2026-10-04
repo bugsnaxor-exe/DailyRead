@@ -34,7 +34,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isUpdateOpen, setIsUpdateOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -84,7 +83,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top Header Row */}
         <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
-          {/* Logo & App Title */}
+          {/* Logo & Daily Read Title */}
           <div className="flex items-center gap-3">
             <div 
               className="w-10 h-10 rounded-xl flex items-center justify-center font-serif font-bold text-white text-base shadow-sm"
@@ -92,11 +91,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 backgroundColor: 'var(--emerald-primary)'
               }}
             >
-              V
+              D
             </div>
             <div>
               <span className="font-serif text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">
-                Verdant<span style={{ color: 'var(--emerald-primary)' }}>Reader</span>
+                Daily<span style={{ color: 'var(--emerald-primary)' }}>Read</span>
               </span>
               <span className="block text-[11px] font-medium tracking-wide uppercase text-[var(--text-muted)]">
                 Universal Shelf & Reader

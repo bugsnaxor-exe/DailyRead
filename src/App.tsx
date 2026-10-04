@@ -212,7 +212,7 @@ export const App: React.FC = () => {
         style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-primary)' }}
       >
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-[var(--text-secondary)]">VerdantReader</span>
+          <span className="font-semibold text-[var(--text-secondary)]">Daily Read</span>
           <span>•</span>
           <span>Light Emerald & Cream White</span>
           <span>•</span>
