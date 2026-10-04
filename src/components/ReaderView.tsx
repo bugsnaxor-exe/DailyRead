@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Book, PageTurnMode } from '../types';
 import { 
-  ArrowLeft, ChevronLeft, ChevronRight, Settings, Maximize2, Minimize2, 
-  BookOpen, FileText, Smartphone, Monitor
+  ArrowLeft, Settings, Maximize2, Minimize2, 
+  FileText, Smartphone, Monitor, Sliders, Check
 } from 'lucide-react';
 
 interface ReaderViewProps {
@@ -19,31 +19,37 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   onChangePageTurnMode
 }) => {
   const [currentPage, setCurrentPage] = useState<number>(book.currentPage || 1);
-  const [isLandscape, setIsLandscape] = useState<boolean>(window.innerWidth > 800);
+  const [isLandscape, setIsLandscape] = useState<boolean>(window.innerWidth > 850);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [fontSize, setFontSize] = useState<number>(18); // px
+  const lineHeight = 1.75;
   const [turningDirection, setTurningDirection] = useState<'left' | 'right' | null>(null);
-  const [fontSize, setFontSize] = useState<number>(17); // px
+
+  // Real-time touch/mouse swipe and interactive drag state
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [dragOffset, setDragOffset] = useState<number>(0);
+  const [dragProgress, setDragProgress] = useState<number>(0);
+  const dragStartXRef = useRef<number>(0);
+  const isTouchActiveRef = useRef<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const totalPages = book.contentPages.length > 0 ? book.contentPages.length : book.totalPages;
 
-  // Auto-detect orientation on resize
   useEffect(() => {
     const handleResize = () => {
-      setIsLandscape(window.innerWidth > 800);
+      setIsLandscape(window.innerWidth > 850);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Keyboard navigation (Arrow keys)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
-        handleNextPage();
+        handleTurnNext();
       } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-        handlePrevPage();
+        handleTurnPrev();
       } else if (e.key === 'Escape') {
         if (isSettingsOpen) {
           setIsSettingsOpen(false);
@@ -54,9 +60,9 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentPage, totalPages, isSettingsOpen, isLandscape]);
+  }, [currentPage, totalPages, isSettingsOpen, isLandscape, pageTurnMode]);
 
-  const handleNextPage = () => {
+  const handleTurnNext = () => {
     const step = isLandscape ? 2 : 1;
     if (currentPage >= totalPages) return;
 
@@ -71,14 +77,13 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       setTimeout(() => {
         setCurrentPage((prev) => Math.min(totalPages, prev + step));
         setTurningDirection(null);
-      }, 250);
+      }, 240);
     } else {
-      // Tap mode (instant flip)
       setCurrentPage((prev) => Math.min(totalPages, prev + step));
     }
   };
 
-  const handlePrevPage = () => {
+  const handleTurnPrev = () => {
     const step = isLandscape ? 2 : 1;
     if (currentPage <= 1) return;
 
@@ -93,11 +98,43 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       setTimeout(() => {
         setCurrentPage((prev) => Math.max(1, prev - step));
         setTurningDirection(null);
-      }, 250);
+      }, 240);
     } else {
-      // Tap mode (instant flip)
       setCurrentPage((prev) => Math.max(1, prev - step));
     }
+  };
+
+  const handlePointerDown = (clientX: number) => {
+    dragStartXRef.current = clientX;
+    isTouchActiveRef.current = true;
+    setIsDragging(true);
+    setDragOffset(0);
+    setDragProgress(0);
+  };
+
+  const handlePointerMove = (clientX: number) => {
+    if (!isTouchActiveRef.current) return;
+    const deltaX = clientX - dragStartXRef.current;
+    setDragOffset(deltaX);
+
+    const screenWidth = window.innerWidth || 800;
+    const progress = Math.max(-1, Math.min(1, deltaX / (screenWidth * 0.45)));
+    setDragProgress(progress);
+  };
+
+  const handlePointerUp = () => {
+    if (!isTouchActiveRef.current) return;
+    isTouchActiveRef.current = false;
+    setIsDragging(false);
+
+    if (dragProgress < -0.15 || dragOffset < -60) {
+      handleTurnNext();
+    } else if (dragProgress > 0.15 || dragOffset > 60) {
+      handleTurnPrev();
+    }
+
+    setDragOffset(0);
+    setDragProgress(0);
   };
 
   const handleExit = () => {
@@ -121,29 +158,38 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     }
   };
 
-  // Get content for page
   const getPageText = (pageIndex: number) => {
     if (pageIndex < 1 || pageIndex > totalPages) return null;
     if (book.contentPages && book.contentPages[pageIndex - 1]) {
       return book.contentPages[pageIndex - 1];
     }
-    return `Page ${pageIndex} of ${book.title}.\n\nThis is formatted content for ${book.format.toUpperCase()} document. The universal rendering engine renders crisp vector text with hardware acceleration and realistic 3D page curl physics.`;
+    return `Page ${pageIndex} of ${book.title}.\n\nDocument format: ${book.format.toUpperCase()}.\n\nSwipe your finger or mouse across the screen to turn pages smoothly with 3D paper curl physics.`;
   };
 
   const leftPageNum = currentPage;
   const rightPageNum = isLandscape && currentPage + 1 <= totalPages ? currentPage + 1 : null;
   const progressPercent = Math.min(100, Math.round((currentPage / totalPages) * 100));
 
+  const dragRotation = pageTurnMode === '3d-curl' && isDragging 
+    ? (dragProgress < 0 ? dragProgress * 80 : dragProgress * 80)
+    : 0;
+
   return (
     <div 
       ref={containerRef}
-      className="fixed inset-0 z-50 flex flex-col select-none overflow-hidden"
+      className="fixed inset-0 z-50 flex flex-col select-none overflow-hidden touch-none"
       style={{
         backgroundColor: 'var(--bg-primary)',
         color: 'var(--text-primary)'
       }}
+      onTouchStart={(e) => handlePointerDown(e.touches[0].clientX)}
+      onTouchMove={(e) => handlePointerMove(e.touches[0].clientX)}
+      onTouchEnd={handlePointerUp}
+      onMouseDown={(e) => handlePointerDown(e.clientX)}
+      onMouseMove={(e) => isDragging && handlePointerMove(e.clientX)}
+      onMouseUp={handlePointerUp}
     >
-      {/* Top Floating Reader Bar */}
+      {/* Top Header Bar */}
       <header 
         className="flex items-center justify-between px-4 sm:px-6 h-14 sm:h-16 border-b transition-colors z-20 backdrop-blur-md"
         style={{
@@ -151,59 +197,55 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
           borderColor: 'var(--border-color)'
         }}
       >
-        {/* Left: Back Arrow & Book Title */}
         <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
             onClick={handleExit}
             aria-label="Back to library"
-            className="p-2 rounded-xl hover:bg-[var(--cream-accent)] transition-colors active:scale-95"
-            style={{ color: 'var(--text-primary)' }}
+            className="p-2 rounded-xl hover:bg-[var(--cream-accent)] transition-colors active:scale-95 cursor-pointer text-[var(--text-primary)]"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           
           <div className="truncate">
-            <h1 className="text-xs sm:text-sm font-bold truncate">
+            <h1 className="text-xs sm:text-sm font-serif font-bold truncate">
               {book.title}
             </h1>
             <p className="text-[10px] sm:text-xs text-[var(--text-secondary)] truncate flex items-center gap-1.5">
               <span>{book.author}</span>
               <span>•</span>
               <span className="uppercase font-semibold text-[var(--emerald-primary)]">
-                {book.isPdf ? 'PDF (3D Curl Active)' : book.format}
+                {book.isPdf ? 'PDF (3D Curl)' : book.format}
               </span>
             </p>
           </div>
         </div>
 
-        {/* Right: Orientation toggle, Settings, Fullscreen */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Orientation Mode Toggle */}
           <button
             type="button"
             onClick={() => setIsLandscape(!isLandscape)}
-            className="p-2 rounded-xl hover:bg-[var(--cream-accent)] text-[var(--text-secondary)] transition-colors"
+            className="p-2 rounded-xl hover:bg-[var(--cream-accent)] text-[var(--text-secondary)] transition-colors cursor-pointer"
             title={isLandscape ? "Switch to Portrait (Single Page)" : "Switch to Landscape (2-Page Spread)"}
           >
             {isLandscape ? <Smartphone className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
           </button>
 
-          {/* Reader Settings Cog */}
           <button
             type="button"
             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-            className="p-2 rounded-xl hover:bg-[var(--cream-accent)] text-[var(--text-secondary)] transition-colors"
-            title="Reader Settings (Animation, Typography)"
+            className={`p-2 rounded-xl transition-all cursor-pointer ${
+              isSettingsOpen ? 'bg-[var(--emerald-light)] text-[var(--emerald-primary)]' : 'hover:bg-[var(--cream-accent)] text-[var(--text-secondary)]'
+            }`}
+            title="Page Turn & Reading Settings"
           >
             <Settings className="w-4 h-4" />
           </button>
 
-          {/* Fullscreen Toggle */}
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="p-2 rounded-xl hover:bg-[var(--cream-accent)] text-[var(--text-secondary)] transition-colors hidden sm:block"
+            className="p-2 rounded-xl hover:bg-[var(--cream-accent)] text-[var(--text-secondary)] transition-colors cursor-pointer hidden sm:block"
             title="Toggle Fullscreen"
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -211,64 +253,78 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         </div>
       </header>
 
-      {/* Reader Settings Drawer / Flyout */}
+      {/* Reading Experience Settings Drawer */}
       {isSettingsOpen && (
         <div 
-          className="absolute top-16 right-4 sm:right-6 z-40 w-72 sm:w-80 rounded-2xl p-5 border shadow-2xl space-y-4 animate-fadeIn"
+          className="absolute top-16 right-4 sm:right-6 z-40 w-72 sm:w-84 rounded-2xl p-5 border shadow-2xl space-y-4 animate-fadeIn"
           style={{
             backgroundColor: 'var(--bg-card)',
-            borderColor: 'var(--border-color)',
+            borderColor: 'var(--emerald-border)',
             boxShadow: 'var(--shadow-lg)'
           }}
+          onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: 'var(--border-color)' }}>
-            <span className="font-bold text-xs uppercase tracking-wider text-[var(--text-muted)]">
-              Reading Experience
-            </span>
+            <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
+              <Sliders className="w-3.5 h-3.5 text-[var(--emerald-primary)]" />
+              <span>Page Turn & Reader Settings</span>
+            </div>
             <button 
               onClick={() => setIsSettingsOpen(false)}
-              className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
             >
-              Close
+              Done
             </button>
           </div>
 
-          {/* Page Turn Animation Selector */}
           <div>
-            <label className="block text-xs font-semibold text-[var(--text-primary)] mb-2">
-              Page Turn Animation:
+            <label className="block text-xs font-bold text-[var(--text-primary)] mb-2">
+              Page Turning Style:
             </label>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="space-y-1.5">
               {[
-                { id: '3d-curl' as PageTurnMode, label: '3D Curl', desc: 'Google Play Books style' },
-                { id: 'slide' as PageTurnMode, label: 'Slide', desc: 'Smooth swipe' },
-                { id: 'tap' as PageTurnMode, label: 'Tap', desc: 'Instant flip' }
-              ].map((mode) => (
-                <button
-                  key={mode.id}
-                  onClick={() => onChangePageTurnMode(mode.id)}
-                  className="p-2 rounded-xl text-center text-xs font-semibold transition-all border"
-                  style={{
-                    backgroundColor: pageTurnMode === mode.id ? 'var(--emerald-light)' : 'transparent',
-                    borderColor: pageTurnMode === mode.id ? 'var(--emerald-border)' : 'var(--border-color)',
-                    color: pageTurnMode === mode.id ? 'var(--emerald-primary)' : 'var(--text-secondary)'
-                  }}
+                { 
+                  id: '3d-curl' as PageTurnMode, 
+                  title: '3D Page Curl', 
+                  desc: 'Swipe/drag across screen with realistic curling paper mesh & shadows (Google Play Books style)' 
+                },
+                { 
+                  id: 'slide' as PageTurnMode, 
+                  title: 'Smooth Slide', 
+                  desc: 'Horizontal swipe glide' 
+                },
+                { 
+                  id: 'tap' as PageTurnMode, 
+                  title: 'Tap to Turn', 
+                  desc: 'Tap screen edge for instant page turn' 
+                }
+              ].map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => onChangePageTurnMode(item.id)}
+                  className={`p-2.5 rounded-xl border cursor-pointer transition-all flex items-start justify-between gap-2 ${
+                    pageTurnMode === item.id 
+                      ? 'bg-[var(--emerald-light)] border-[var(--emerald-primary)]' 
+                      : 'border-[var(--border-color)] hover:bg-[var(--cream-accent)]'
+                  }`}
                 >
-                  <div>{mode.label}</div>
-                </button>
+                  <div>
+                    <span className="text-xs font-bold block" style={{ color: pageTurnMode === item.id ? 'var(--emerald-primary)' : 'var(--text-primary)' }}>
+                      {item.title}
+                    </span>
+                    <span className="text-[10px] text-[var(--text-muted)] leading-tight block mt-0.5">
+                      {item.desc}
+                    </span>
+                  </div>
+                  {pageTurnMode === item.id && (
+                    <Check className="w-4 h-4 text-[var(--emerald-primary)] flex-shrink-0 mt-0.5" />
+                  )}
+                </div>
               ))}
             </div>
-            <p className="text-[10px] text-[var(--text-muted)] mt-1.5">
-              {pageTurnMode === '3d-curl' 
-                ? 'Realistic 3D mesh peel with cast shadows (compatible with PDFs & Books).' 
-                : pageTurnMode === 'slide' 
-                ? 'Horizontal smooth glide animation.' 
-                : 'Zero-latency instant page transition.'}
-            </p>
           </div>
 
-          {/* Text Font Size Slider */}
-          <div>
+          <div className="pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
             <div className="flex justify-between text-xs font-semibold text-[var(--text-primary)] mb-1">
               <span>Text Size</span>
               <span>{fontSize}px</span>
@@ -276,152 +332,131 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
             <input
               type="range"
               min="14"
-              max="26"
+              max="24"
               value={fontSize}
               onChange={(e) => setFontSize(Number(e.target.value))}
               className="w-full accent-[var(--emerald-primary)] cursor-pointer"
             />
           </div>
 
-          {/* Orientation Mode */}
-          <div>
-            <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1">
-              Display Spread:
+          <div className="pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
+            <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
+              Reading Spread:
             </label>
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={() => setIsLandscape(false)}
-                className="flex-1 py-1.5 text-xs font-semibold rounded-lg border"
-                style={{
-                  backgroundColor: !isLandscape ? 'var(--emerald-light)' : 'transparent',
-                  borderColor: !isLandscape ? 'var(--emerald-border)' : 'var(--border-color)',
-                  color: !isLandscape ? 'var(--emerald-primary)' : 'var(--text-secondary)'
-                }}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                  !isLandscape ? 'bg-[var(--emerald-light)] text-[var(--emerald-primary)] border-[var(--emerald-border)]' : 'border-[var(--border-color)] text-[var(--text-secondary)]'
+                }`}
               >
-                Portrait (Single)
+                Portrait (1 Page)
               </button>
               <button
+                type="button"
                 onClick={() => setIsLandscape(true)}
-                className="flex-1 py-1.5 text-xs font-semibold rounded-lg border"
-                style={{
-                  backgroundColor: isLandscape ? 'var(--emerald-light)' : 'transparent',
-                  borderColor: isLandscape ? 'var(--emerald-border)' : 'var(--border-color)',
-                  color: isLandscape ? 'var(--emerald-primary)' : 'var(--text-secondary)'
-                }}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                  isLandscape ? 'bg-[var(--emerald-light)] text-[var(--emerald-primary)] border-[var(--emerald-border)]' : 'border-[var(--border-color)] text-[var(--text-secondary)]'
+                }`}
               >
-                Landscape (Spread)
+                Landscape (2 Pages)
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Main Reading Stage (3D Perspective Viewport) */}
+      {/* Main Reading Stage */}
       <main 
-        className="reader-stage flex-1 flex items-center justify-center p-3 sm:p-8 relative overflow-hidden"
+        className="reader-stage flex-1 flex items-center justify-center p-3 sm:p-6 relative overflow-hidden"
         style={{
-          background: 'radial-gradient(ellipse at center, rgba(16, 185, 129, 0.04) 0%, transparent 70%)'
+          background: 'radial-gradient(ellipse at center, rgba(5, 150, 105, 0.03) 0%, transparent 70%)'
         }}
       >
-        {/* Left Page Turn Click Zone / Button */}
-        <button
-          type="button"
-          onClick={handlePrevPage}
-          disabled={currentPage <= 1}
-          aria-label="Previous Page"
-          className="absolute left-2 sm:left-6 z-30 p-2.5 sm:p-3 rounded-full bg-black/10 dark:bg-white/10 hover:bg-[var(--emerald-primary)] hover:text-white transition-all disabled:opacity-0 disabled:pointer-events-none"
-        >
-          <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
-        </button>
-
-        {/* Right Page Turn Click Zone / Button */}
-        <button
-          type="button"
-          onClick={handleNextPage}
-          disabled={currentPage >= totalPages}
-          aria-label="Next Page"
-          className="absolute right-2 sm:right-6 z-30 p-2.5 sm:p-3 rounded-full bg-black/10 dark:bg-white/10 hover:bg-[var(--emerald-primary)] hover:text-white transition-all disabled:opacity-0 disabled:pointer-events-none"
-        >
-          <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
-        </button>
-
-        {/* The 3D Book Container */}
         <div 
-          className="relative flex items-stretch max-w-5xl w-full h-[75vh] sm:h-[82vh] rounded-2xl overflow-hidden shadow-2xl transition-all duration-300"
+          onClick={handleTurnPrev}
+          className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 z-20 cursor-w-resize"
+          title="Tap or swipe right to turn back"
+        />
+        <div 
+          onClick={handleTurnNext}
+          className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 z-20 cursor-e-resize"
+          title="Tap or swipe left to turn forward"
+        />
+
+        {/* 3D Book Container */}
+        <div 
+          className="relative flex items-stretch max-w-4xl w-full h-[76vh] sm:h-[80vh] rounded-2xl overflow-hidden shadow-xl transition-all duration-300"
           style={{
-            boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border-color)'
+            boxShadow: '0 20px 50px -10px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--border-color)',
+            transform: `perspective(2000px) rotateY(${dragRotation * 0.1}deg)`
           }}
         >
-          {/* Dual Page Center Spine Crease (In Landscape Mode) */}
           {isLandscape && <div className="book-spine-crease" />}
 
           {/* Left Page Sheet */}
           <div 
-            className={`page-sheet flex-1 p-6 sm:p-12 flex flex-col justify-between overflow-y-auto select-text relative ${
+            className={`page-sheet flex-1 p-6 sm:p-10 flex flex-col justify-between overflow-y-auto select-text relative ${
               turningDirection === 'right' ? 'turn-right' : ''
             }`}
             style={{
               fontFamily: book.isPdf ? 'var(--font-sans)' : 'var(--font-serif)',
               fontSize: `${fontSize}px`,
-              lineHeight: 1.75
+              lineHeight: lineHeight,
+              transform: isDragging && dragProgress > 0 ? `rotateY(${dragProgress * 30}deg)` : undefined
             }}
           >
-            {/* Header: Book Title / Chapter indicator */}
-            <div className="flex justify-between items-center text-[11px] font-sans font-medium text-[var(--text-muted)] pb-4 border-b border-black/5 dark:border-white/5 select-none">
+            <div className="flex justify-between items-center text-[10px] font-sans font-medium text-[var(--text-muted)] pb-3 border-b border-black/5 dark:border-white/5 select-none">
               <span className="truncate max-w-[200px]">{book.title}</span>
-              <span>{book.isPdf ? 'PDF Vector View' : 'Chapter I'}</span>
+              <span>{book.isPdf ? 'PDF Vector Page' : 'Chapter Content'}</span>
             </div>
 
-            {/* Page Content Body */}
-            <div className="my-auto whitespace-pre-line py-4">
+            <div className="my-auto whitespace-pre-line py-3">
               {book.isPdf && (
-                <div className="mb-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 select-none">
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>PDF Native Texture • 3D Curl Enabled</span>
+                <div className="mb-3 inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 select-none">
+                  <FileText className="w-3 h-3" />
+                  <span>PDF Document • 3D Swipe Curl</span>
                 </div>
               )}
               {getPageText(leftPageNum)}
             </div>
 
-            {/* Footer: Page Number */}
-            <div className="flex justify-between items-center text-xs font-sans text-[var(--text-muted)] pt-4 border-t border-black/5 dark:border-white/5 select-none">
+            <div className="flex justify-between items-center text-[11px] font-sans text-[var(--text-muted)] pt-3 border-t border-black/5 dark:border-white/5 select-none">
               <span>{Math.round(((leftPageNum) / totalPages) * 100)}%</span>
               <span className="font-semibold">{leftPageNum}</span>
             </div>
           </div>
 
-          {/* Right Page Sheet (Only rendered in Landscape Mode) */}
+          {/* Right Page Sheet */}
           {isLandscape && (
             <div 
-              className={`page-sheet flex-1 p-6 sm:p-12 flex flex-col justify-between overflow-y-auto select-text border-l border-black/10 dark:border-white/10 relative ${
+              className={`page-sheet flex-1 p-6 sm:p-10 flex flex-col justify-between overflow-y-auto select-text border-l border-black/5 dark:border-white/5 relative ${
                 turningDirection === 'left' ? 'turn-left' : ''
               }`}
               style={{
                 fontFamily: book.isPdf ? 'var(--font-sans)' : 'var(--font-serif)',
                 fontSize: `${fontSize}px`,
-                lineHeight: 1.75
+                lineHeight: lineHeight,
+                transform: isDragging && dragProgress < 0 ? `rotateY(${dragProgress * 30}deg)` : undefined
               }}
             >
-              {/* Header */}
-              <div className="flex justify-between items-center text-[11px] font-sans font-medium text-[var(--text-muted)] pb-4 border-b border-black/5 dark:border-white/5 select-none">
+              <div className="flex justify-between items-center text-[10px] font-sans font-medium text-[var(--text-muted)] pb-3 border-b border-black/5 dark:border-white/5 select-none">
                 <span className="truncate max-w-[200px]">{book.author}</span>
                 <span>{book.format.toUpperCase()}</span>
               </div>
 
-              {/* Page Content Body */}
-              <div className="my-auto whitespace-pre-line py-4">
+              <div className="my-auto whitespace-pre-line py-3">
                 {rightPageNum ? (
                   getPageText(rightPageNum)
                 ) : (
-                  <div className="flex flex-col items-center justify-center text-center text-[var(--text-muted)] py-12 select-none">
-                    <BookOpen className="w-10 h-10 mb-2 opacity-30" />
-                    <p className="text-sm font-medium">End of Document</p>
+                  <div className="flex flex-col items-center justify-center text-center text-[var(--text-muted)] py-10 select-none">
+                    <p className="text-xs font-medium">End of Document</p>
                   </div>
                 )}
               </div>
 
-              {/* Footer */}
-              <div className="flex justify-between items-center text-xs font-sans text-[var(--text-muted)] pt-4 border-t border-black/5 dark:border-white/5 select-none">
+              <div className="flex justify-between items-center text-[11px] font-sans text-[var(--text-muted)] pt-3 border-t border-black/5 dark:border-white/5 select-none">
                 <span className="font-semibold">{rightPageNum || '—'}</span>
                 <span>{rightPageNum ? `${Math.round((rightPageNum / totalPages) * 100)}%` : '100%'}</span>
               </div>
@@ -430,32 +465,31 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         </div>
       </main>
 
-      {/* Bottom Progress Scrub Bar */}
+      {/* Scrub Bar */}
       <footer 
-        className="px-4 sm:px-8 py-3 border-t flex items-center justify-between gap-4 text-xs font-medium z-20"
+        className="px-4 sm:px-8 py-2.5 border-t flex items-center justify-between gap-4 text-xs font-medium z-20"
         style={{
           backgroundColor: 'var(--bg-card)',
           borderColor: 'var(--border-color)'
         }}
       >
-        <span className="text-[var(--text-secondary)] whitespace-nowrap">
+        <span className="text-[var(--text-secondary)] whitespace-nowrap text-[11px]">
           Page {currentPage} of {totalPages}
         </span>
 
-        {/* Slider bar for quick seeking */}
-        <div className="flex-1 max-w-lg mx-auto flex items-center gap-3">
+        <div className="flex-1 max-w-md mx-auto flex items-center gap-3">
           <input
             type="range"
             min="1"
             max={totalPages}
             value={currentPage}
             onChange={(e) => setCurrentPage(Number(e.target.value))}
-            className="w-full h-1.5 rounded-full accent-[var(--emerald-primary)] cursor-pointer"
+            className="w-full h-1 rounded-full accent-[var(--emerald-primary)] cursor-pointer"
           />
         </div>
 
-        <span className="font-semibold text-[var(--emerald-primary)] whitespace-nowrap">
-          {progressPercent}% Complete
+        <span className="font-semibold text-[var(--emerald-primary)] whitespace-nowrap text-[11px]">
+          {progressPercent}%
         </span>
       </footer>
     </div>

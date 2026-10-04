@@ -4,14 +4,12 @@ import type {
 } from './types';
 import { 
   getStoredBooks, saveBooks, getStoredTheme, saveTheme, 
-  getStoredPageTurnMode, savePageTurnMode, checkAppUpdate, 
-  dismissUpdate 
+  getStoredPageTurnMode, savePageTurnMode, checkAppUpdate 
 } from './storage';
 import { Navbar } from './components/Navbar';
 import { ShelfView } from './components/ShelfView';
 import { ReaderView } from './components/ReaderView';
 import { FloatingActionButton } from './components/FloatingActionButton';
-import { UpdateModal } from './components/UpdateModal';
 
 export const App: React.FC = () => {
   const [books, setBooks] = useState<Book[]>(getStoredBooks);
@@ -21,22 +19,18 @@ export const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeBook, setActiveBook] = useState<Book | null>(null);
 
-  // Update State (background only, triggers modal only when mandatory or new release)
+  // Background Update State (accessed via the Upper Right Corner in Navbar)
   const [updateState, setUpdateState] = useState<UpdateState>(checkAppUpdate);
-  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
 
   // Initialize theme on mount
   useEffect(() => {
     saveTheme(theme);
   }, [theme]);
 
-  // Check update status silently in background (only pops up if mandatory or new release)
+  // Check update state silently
   useEffect(() => {
     const status = checkAppUpdate();
     setUpdateState(status);
-    if (status.hasUpdate && (!status.dismissed || status.isMandatory)) {
-      setIsUpdateModalOpen(true);
-    }
   }, []);
 
   const updateBooksState = (newBooks: Book[]) => {
@@ -129,10 +123,9 @@ export const App: React.FC = () => {
         pages = [`Content of ${file.name}`];
       }
     } else {
-      // Formatted document text stream
       pages = [
-        `Document: ${file.name}\n\nFormat: ${format.toUpperCase()}\nSize: ${sizeFormatted}\n\nIndexed directly from device storage. The 3D page curl engine is active for smooth reading across Portrait and Landscape spreads.`,
-        `Page 2: Reading Analytics\n\nProgress and bookmarks are saved automatically to your device.`
+        `Document: ${file.name}\n\nFormat: ${format.toUpperCase()}\nSize: ${sizeFormatted}\n\nIndexed directly from device storage. Swipe your finger or mouse across the screen to turn pages with 3D paper curl physics.`,
+        `Page 2: Reading Analytics\n\nProgress and bookmarks are stored directly on your device.`
       ];
     }
 
@@ -150,21 +143,12 @@ export const App: React.FC = () => {
       isFinished: false,
       dateAdded: new Date().toISOString(),
       lastReadDate: new Date().toISOString(),
-      coverColor: '#0F5132',
+      coverColor: '#059669',
       contentPages: pages
     };
 
     updateBooksState([newBook, ...books]);
-    // Immediately open the newly added book
     handleOpenBook(newBook);
-  };
-
-  const handleDismissUpdate = () => {
-    if (updateState.latestRelease) {
-      dismissUpdate(updateState.latestRelease.version);
-    }
-    setUpdateState((prev) => ({ ...prev, dismissed: true }));
-    setIsUpdateModalOpen(false);
   };
 
   const handleApplyUpdate = (newVersion: string) => {
@@ -177,7 +161,6 @@ export const App: React.FC = () => {
       updateProgress: 100,
       dismissed: false
     });
-    setIsUpdateModalOpen(false);
   };
 
   const counts = {
@@ -189,7 +172,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col transition-colors duration-200">
-      {/* Top Navigation */}
+      {/* Top Navbar with Upper Right Update Dropdown */}
       <Navbar
         currentShelf={currentShelf}
         onSelectShelf={(shelf) => setCurrentShelf(shelf)}
@@ -197,6 +180,8 @@ export const App: React.FC = () => {
         onToggleTheme={handleToggleTheme}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        updateState={updateState}
+        onApplyUpdate={handleApplyUpdate}
         counts={counts}
       />
 
@@ -223,13 +208,13 @@ export const App: React.FC = () => {
 
       {/* Clean Minimalist Footer */}
       <footer 
-        className="py-6 px-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--text-muted)]"
+        className="py-5 px-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--text-muted)]"
         style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-primary)' }}
       >
         <div className="flex items-center gap-2">
           <span className="font-semibold text-[var(--text-secondary)]">VerdantReader</span>
           <span>•</span>
-          <span>Cream & Emerald</span>
+          <span>Light Emerald & Cream White</span>
           <span>•</span>
           <span>Local Device Library</span>
         </div>
@@ -245,15 +230,6 @@ export const App: React.FC = () => {
           onClose={handleCloseReader}
           pageTurnMode={pageTurnMode}
           onChangePageTurnMode={handleChangePageTurnMode}
-        />
-      )}
-
-      {/* In-App Auto-Update Pop-Up (Only shows when an update is released or mandatory) */}
-      {isUpdateModalOpen && (
-        <UpdateModal
-          updateState={updateState}
-          onDismiss={handleDismissUpdate}
-          onApplyUpdate={handleApplyUpdate}
         />
       )}
     </div>

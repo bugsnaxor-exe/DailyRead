@@ -24,42 +24,41 @@ export const BookCard: React.FC<BookCardProps> = ({
   return (
     <div 
       onClick={() => onOpen(book)}
-      className="book-card-item group relative flex items-center justify-between p-4 sm:p-5 rounded-2xl cursor-pointer transition-all duration-300 border"
+      className="book-card-item group relative flex items-center justify-between p-3.5 sm:p-4 rounded-xl cursor-pointer transition-all duration-200 border hover:border-[var(--emerald-primary)] hover:shadow-md"
       style={{
         backgroundColor: 'var(--bg-card)',
         borderColor: 'var(--border-color)',
-        boxShadow: 'var(--shadow-sm)'
+        minHeight: '112px'
       }}
     >
-      {/* Left Section: Title, Author, Type & Size comma-separated, SVG action toggles */}
-      <div className="flex-1 pr-4 sm:pr-6 flex flex-col justify-between h-full min-w-0">
+      {/* Left Column: Title, Author, Type & Size, SVG buttons */}
+      <div className="flex-1 pr-3 sm:pr-4 flex flex-col justify-between h-full min-w-0">
         <div>
-          {/* Document Format Badge (subtle) */}
-          <div className="flex items-center gap-2 mb-1.5">
+          {/* Format Badge & Progress */}
+          <div className="flex items-center gap-1.5 mb-1">
             <span 
-              className="text-[11px] font-semibold tracking-wider px-2 py-0.5 rounded-md uppercase"
+              className="text-[10px] font-bold tracking-wider px-1.5 py-0.5 rounded uppercase"
               style={{
                 backgroundColor: 'var(--emerald-light)',
                 color: 'var(--emerald-primary)'
               }}
             >
-              {book.isPdf ? 'PDF DOCUMENT' : formatUpper}
+              {book.isPdf ? 'PDF' : formatUpper}
             </span>
 
             {book.currentPage > 1 && !book.isFinished && (
               <span 
-                className="text-[11px] font-medium"
+                className="text-[10px] font-medium"
                 style={{ color: 'var(--text-secondary)' }}
               >
-                {progressPercent}% read
+                {progressPercent}%
               </span>
             )}
           </div>
 
           {/* Book Title */}
           <h3 
-            className="text-base sm:text-lg font-bold leading-snug truncate group-hover:text-[var(--emerald-primary)] transition-colors"
-            style={{ color: 'var(--text-primary)' }}
+            className="text-sm font-bold leading-tight truncate text-[var(--text-primary)] group-hover:text-[var(--emerald-primary)] transition-colors"
             title={book.title}
           >
             {book.title}
@@ -67,36 +66,34 @@ export const BookCard: React.FC<BookCardProps> = ({
 
           {/* Author Name */}
           <p 
-            className="text-xs sm:text-sm font-medium mt-1 truncate"
-            style={{ color: 'var(--text-secondary)' }}
+            className="text-xs font-medium mt-0.5 truncate text-[var(--text-secondary)]"
           >
             {book.author}
           </p>
 
           {/* Document Type & Size (Comma Separated) */}
           <p 
-            className="text-xs font-medium mt-1.5"
-            style={{ color: 'var(--text-muted)' }}
+            className="text-[11px] font-medium mt-1 text-[var(--text-muted)]"
           >
             {formatUpper}, {book.size}
           </p>
         </div>
 
         {/* Action SVG Buttons Row (Favorite & Already Read) */}
-        <div className="flex items-center gap-3 mt-4 pt-2">
+        <div className="flex items-center gap-2 mt-2 pt-1">
           {/* Favorite SVG Toggle */}
           <button
             type="button"
             aria-label={book.isFavorite ? 'Remove from favorites' : 'Mark as favorite'}
             onClick={(e) => onToggleFavorite(book.id, e)}
-            className="p-2 rounded-xl transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center"
+            className="w-7 h-7 rounded-lg transition-all duration-150 hover:scale-110 active:scale-95 flex items-center justify-center border cursor-pointer"
             style={{
               backgroundColor: book.isFavorite ? 'var(--emerald-light)' : 'transparent',
-              border: `1px solid ${book.isFavorite ? 'var(--emerald-border)' : 'var(--border-color)'}`
+              borderColor: book.isFavorite ? 'var(--emerald-border)' : 'var(--border-color)'
             }}
           >
             <Heart 
-              className="w-4 h-4 transition-colors"
+              className="w-3.5 h-3.5 transition-colors"
               style={{
                 color: book.isFavorite ? 'var(--emerald-primary)' : 'var(--text-muted)',
                 fill: book.isFavorite ? 'var(--emerald-primary)' : 'none'
@@ -109,14 +106,14 @@ export const BookCard: React.FC<BookCardProps> = ({
             type="button"
             aria-label={book.isFinished ? 'Mark as unread' : 'Mark as already done reading'}
             onClick={(e) => onToggleFinished(book.id, e)}
-            className="p-2 rounded-xl transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center"
+            className="w-7 h-7 rounded-lg transition-all duration-150 hover:scale-110 active:scale-95 flex items-center justify-center border cursor-pointer"
             style={{
               backgroundColor: book.isFinished ? 'var(--emerald-light)' : 'transparent',
-              border: `1px solid ${book.isFinished ? 'var(--emerald-border)' : 'var(--border-color)'}`
+              borderColor: book.isFinished ? 'var(--emerald-border)' : 'var(--border-color)'
             }}
           >
             <CheckCircle2 
-              className="w-4 h-4 transition-colors"
+              className="w-3.5 h-3.5 transition-colors"
               style={{
                 color: book.isFinished ? 'var(--emerald-primary)' : 'var(--text-muted)',
                 fill: book.isFinished ? 'var(--emerald-light)' : 'none'
@@ -124,14 +121,14 @@ export const BookCard: React.FC<BookCardProps> = ({
             />
           </button>
 
-          {/* Quick Read Progress Indicator bar */}
+          {/* Read Progress Mini Bar */}
           {book.currentPage > 1 && !book.isFinished && (
             <div 
-              className="flex-1 max-w-[100px] h-1.5 rounded-full overflow-hidden ml-2 hidden sm:block"
+              className="flex-1 max-w-[80px] h-1 rounded-full overflow-hidden ml-1 hidden sm:block"
               style={{ backgroundColor: 'var(--cream-accent)' }}
             >
               <div 
-                className="h-full rounded-full transition-all duration-500"
+                className="h-full rounded-full"
                 style={{ 
                   width: `${progressPercent}%`,
                   backgroundColor: 'var(--emerald-accent)'
@@ -142,33 +139,33 @@ export const BookCard: React.FC<BookCardProps> = ({
         </div>
       </div>
 
-      {/* Right Section: Book Cover Wallpaper / Front Page Image with 3D Spine Depth */}
+      {/* Right Column: Compact 3D Book Cover Wallpaper */}
       <div className="book-cover-container flex-shrink-0">
         <div 
-          className="book-cover-3d w-20 h-28 sm:w-24 sm:h-34 rounded-md overflow-hidden flex flex-col justify-between p-2 text-white relative select-none"
+          className="book-cover-3d w-14 h-20 sm:w-16 sm:h-22 rounded overflow-hidden flex flex-col justify-between p-1.5 text-white relative select-none"
           style={{
-            backgroundColor: book.coverColor || '#0F5132',
-            backgroundImage: book.coverUrl ? `url(${book.coverUrl})` : `linear-gradient(135deg, ${book.coverColor || '#0F5132'} 0%, #071f14 100%)`,
+            backgroundColor: book.coverColor || '#059669',
+            backgroundImage: book.coverUrl ? `url(${book.coverUrl})` : `linear-gradient(135deg, ${book.coverColor || '#059669'} 0%, #064E3B 100%)`,
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
         >
           {/* Subtle Spine Texture */}
-          <div className="absolute inset-y-0 left-0 w-2.5 bg-gradient-to-r from-black/40 via-white/10 to-transparent pointer-events-none" />
+          <div className="absolute inset-y-0 left-0 w-2 bg-gradient-to-r from-black/35 via-white/10 to-transparent pointer-events-none" />
 
-          {/* Cover Typographic Art */}
-          <div className="z-10 mt-1">
-            <span className="text-[9px] uppercase font-bold tracking-widest text-emerald-200/90 block truncate">
+          {/* Cover Art Text */}
+          <div className="z-10 mt-0.5">
+            <span className="text-[8px] uppercase font-bold tracking-wider text-emerald-200 block truncate">
               {formatUpper}
             </span>
-            <span className="text-[11px] font-serif font-bold line-clamp-2 leading-tight mt-1 text-white/95 drop-shadow-sm">
+            <span className="text-[9px] font-serif font-bold line-clamp-2 leading-tight mt-0.5 text-white/95 drop-shadow-sm">
               {book.title}
             </span>
           </div>
 
-          <div className="z-10 flex items-center justify-between text-[9px] text-emerald-100/80 pt-1 border-t border-white/20">
-            <span className="truncate max-w-[50px]">{book.author.split(' ')[0]}</span>
-            <BookOpen className="w-3 h-3 flex-shrink-0 opacity-70" />
+          <div className="z-10 flex items-center justify-between text-[8px] text-emerald-100/70 pt-0.5 border-t border-white/20">
+            <span className="truncate max-w-[36px]">{book.author.split(' ')[0]}</span>
+            <BookOpen className="w-2.5 h-2.5 opacity-80" />
           </div>
         </div>
       </div>
