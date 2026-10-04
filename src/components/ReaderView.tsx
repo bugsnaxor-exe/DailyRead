@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { Book, PageTurnMode } from '../types';
+import type { Book, PageTurnMode, PageTurnDirection } from '../types';
 import { 
   ArrowLeft, Settings, Maximize2, Minimize2, 
-  FileText, Smartphone, Monitor, Sliders, Check
+  FileText, Smartphone, Monitor, Sliders, Check,
+  ArrowRightLeft
 } from 'lucide-react';
 
 interface ReaderViewProps {
@@ -22,8 +23,9 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   const [isLandscape, setIsLandscape] = useState<boolean>(window.innerWidth > 850);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [pageTurnDirection, setPageTurnDirection] = useState<PageTurnDirection>('ltr');
   const [fontSize, setFontSize] = useState<number>(18); // px
-  const lineHeight = 1.75;
+  const lineHeight = 1.8;
   const [turningDirection, setTurningDirection] = useState<'left' | 'right' | null>(null);
 
   // Real-time touch/mouse swipe and interactive drag state
@@ -44,12 +46,61 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const handleTurnForward = () => {
+    const step = isLandscape ? 2 : 1;
+    if (currentPage >= totalPages) return;
+
+    const animDir = pageTurnDirection === 'ltr' ? 'left' : 'right';
+
+    if (pageTurnMode === '3d-curl') {
+      setTurningDirection(animDir);
+      setTimeout(() => {
+        setCurrentPage((prev) => Math.min(totalPages, prev + step));
+        setTurningDirection(null);
+      }, 440);
+    } else if (pageTurnMode === 'slide') {
+      setTurningDirection(animDir);
+      setTimeout(() => {
+        setCurrentPage((prev) => Math.min(totalPages, prev + step));
+        setTurningDirection(null);
+      }, 250);
+    } else {
+      setCurrentPage((prev) => Math.min(totalPages, prev + step));
+    }
+  };
+
+  const handleTurnBackward = () => {
+    const step = isLandscape ? 2 : 1;
+    if (currentPage <= 1) return;
+
+    const animDir = pageTurnDirection === 'ltr' ? 'right' : 'left';
+
+    if (pageTurnMode === '3d-curl') {
+      setTurningDirection(animDir);
+      setTimeout(() => {
+        setCurrentPage((prev) => Math.max(1, prev - step));
+        setTurningDirection(null);
+      }, 440);
+    } else if (pageTurnMode === 'slide') {
+      setTurningDirection(animDir);
+      setTimeout(() => {
+        setCurrentPage((prev) => Math.max(1, prev - step));
+        setTurningDirection(null);
+      }, 250);
+    } else {
+      setCurrentPage((prev) => Math.max(1, prev - step));
+    }
+  };
+
+  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
-        handleTurnNext();
+        if (pageTurnDirection === 'ltr') handleTurnForward();
+        else handleTurnBackward();
       } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-        handleTurnPrev();
+        if (pageTurnDirection === 'ltr') handleTurnBackward();
+        else handleTurnForward();
       } else if (e.key === 'Escape') {
         if (isSettingsOpen) {
           setIsSettingsOpen(false);
@@ -60,50 +111,9 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentPage, totalPages, isSettingsOpen, isLandscape, pageTurnMode]);
+  }, [currentPage, totalPages, isSettingsOpen, isLandscape, pageTurnMode, pageTurnDirection]);
 
-  const handleTurnNext = () => {
-    const step = isLandscape ? 2 : 1;
-    if (currentPage >= totalPages) return;
-
-    if (pageTurnMode === '3d-curl') {
-      setTurningDirection('left');
-      setTimeout(() => {
-        setCurrentPage((prev) => Math.min(totalPages, prev + step));
-        setTurningDirection(null);
-      }, 420);
-    } else if (pageTurnMode === 'slide') {
-      setTurningDirection('left');
-      setTimeout(() => {
-        setCurrentPage((prev) => Math.min(totalPages, prev + step));
-        setTurningDirection(null);
-      }, 240);
-    } else {
-      setCurrentPage((prev) => Math.min(totalPages, prev + step));
-    }
-  };
-
-  const handleTurnPrev = () => {
-    const step = isLandscape ? 2 : 1;
-    if (currentPage <= 1) return;
-
-    if (pageTurnMode === '3d-curl') {
-      setTurningDirection('right');
-      setTimeout(() => {
-        setCurrentPage((prev) => Math.max(1, prev - step));
-        setTurningDirection(null);
-      }, 420);
-    } else if (pageTurnMode === 'slide') {
-      setTurningDirection('right');
-      setTimeout(() => {
-        setCurrentPage((prev) => Math.max(1, prev - step));
-        setTurningDirection(null);
-      }, 240);
-    } else {
-      setCurrentPage((prev) => Math.max(1, prev - step));
-    }
-  };
-
+  // Touch and Mouse Swiping Gesture Handlers
   const handlePointerDown = (clientX: number) => {
     dragStartXRef.current = clientX;
     isTouchActiveRef.current = true;
@@ -127,10 +137,13 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     isTouchActiveRef.current = false;
     setIsDragging(false);
 
+    // If dragged enough to complete page turn
     if (dragProgress < -0.15 || dragOffset < -60) {
-      handleTurnNext();
+      if (pageTurnDirection === 'ltr') handleTurnForward();
+      else handleTurnBackward();
     } else if (dragProgress > 0.15 || dragOffset > 60) {
-      handleTurnPrev();
+      if (pageTurnDirection === 'ltr') handleTurnBackward();
+      else handleTurnForward();
     }
 
     setDragOffset(0);
@@ -163,15 +176,16 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     if (book.contentPages && book.contentPages[pageIndex - 1]) {
       return book.contentPages[pageIndex - 1];
     }
-    return `Page ${pageIndex} of ${book.title}.\n\nDocument format: ${book.format.toUpperCase()}.\n\nSwipe your finger or mouse across the screen to turn pages smoothly with 3D paper curl physics.`;
+    return `Page ${pageIndex} of ${book.title}.\n\nFormat: ${book.format.toUpperCase()}.\n\nSwipe your finger or mouse across the screen to turn pages smoothly with realistic 3D paper curl physics.`;
   };
 
   const leftPageNum = currentPage;
   const rightPageNum = isLandscape && currentPage + 1 <= totalPages ? currentPage + 1 : null;
   const progressPercent = Math.min(100, Math.round((currentPage / totalPages) * 100));
 
+  // Dynamic 3D curl rotation while user is dragging
   const dragRotation = pageTurnMode === '3d-curl' && isDragging 
-    ? (dragProgress < 0 ? dragProgress * 80 : dragProgress * 80)
+    ? (dragProgress < 0 ? dragProgress * 85 : dragProgress * 85)
     : 0;
 
   return (
@@ -182,9 +196,11 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         backgroundColor: 'var(--bg-primary)',
         color: 'var(--text-primary)'
       }}
+      // Native touch events for finger swiping across the screen
       onTouchStart={(e) => handlePointerDown(e.touches[0].clientX)}
       onTouchMove={(e) => handlePointerMove(e.touches[0].clientX)}
       onTouchEnd={handlePointerUp}
+      // Mouse drag events for desktop
       onMouseDown={(e) => handlePointerDown(e.clientX)}
       onMouseMove={(e) => isDragging && handlePointerMove(e.clientX)}
       onMouseUp={handlePointerUp}
@@ -197,6 +213,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
           borderColor: 'var(--border-color)'
         }}
       >
+        {/* Left: Back button & Title */}
         <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
@@ -221,7 +238,9 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
           </div>
         </div>
 
+        {/* Right: Controls (Orientation, Settings Drawer, Fullscreen) */}
         <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Orientation Spread Switch */}
           <button
             type="button"
             onClick={() => setIsLandscape(!isLandscape)}
@@ -231,6 +250,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
             {isLandscape ? <Smartphone className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
           </button>
 
+          {/* Reading Settings Button */}
           <button
             type="button"
             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
@@ -242,6 +262,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
             <Settings className="w-4 h-4" />
           </button>
 
+          {/* Fullscreen Toggle */}
           <button
             type="button"
             onClick={toggleFullscreen}
@@ -253,10 +274,10 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         </div>
       </header>
 
-      {/* Reading Experience Settings Drawer */}
+      {/* Reading Experience Settings Drawer (Page Turning Options & Direction) */}
       {isSettingsOpen && (
         <div 
-          className="absolute top-16 right-4 sm:right-6 z-40 w-72 sm:w-84 rounded-2xl p-5 border shadow-2xl space-y-4 animate-fadeIn"
+          className="absolute top-16 right-4 sm:right-6 z-40 w-72 sm:w-88 rounded-2xl p-5 border shadow-2xl space-y-4 animate-fadeIn"
           style={{
             backgroundColor: 'var(--bg-card)',
             borderColor: 'var(--emerald-border)',
@@ -267,7 +288,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
           <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: 'var(--border-color)' }}>
             <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
               <Sliders className="w-3.5 h-3.5 text-[var(--emerald-primary)]" />
-              <span>Page Turn & Reader Settings</span>
+              <span>Reader Settings</span>
             </div>
             <button 
               onClick={() => setIsSettingsOpen(false)}
@@ -277,21 +298,22 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
             </button>
           </div>
 
+          {/* Page Turn Mode Selector (User's explicit requested option) */}
           <div>
             <label className="block text-xs font-bold text-[var(--text-primary)] mb-2">
-              Page Turning Style:
+              Page Turning Animation:
             </label>
             <div className="space-y-1.5">
               {[
                 { 
                   id: '3d-curl' as PageTurnMode, 
                   title: '3D Page Curl', 
-                  desc: 'Swipe/drag across screen with realistic curling paper mesh & shadows (Google Play Books style)' 
+                  desc: 'Physical paper peeling with 3D shadows (Google Play Books style)' 
                 },
                 { 
                   id: 'slide' as PageTurnMode, 
                   title: 'Smooth Slide', 
-                  desc: 'Horizontal swipe glide' 
+                  desc: 'Horizontal swipe glide transition' 
                 },
                 { 
                   id: 'tap' as PageTurnMode, 
@@ -324,6 +346,41 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
             </div>
           </div>
 
+          {/* Page Turn Direction (User's explicit requested option) */}
+          <div className="pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <ArrowRightLeft className="w-3.5 h-3.5 text-[var(--emerald-primary)]" />
+              <label className="text-xs font-bold text-[var(--text-primary)]">
+                Page Turning Direction:
+              </label>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPageTurnDirection('ltr')}
+                className={`flex-1 py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
+                  pageTurnDirection === 'ltr' 
+                    ? 'bg-[var(--emerald-light)] text-[var(--emerald-primary)] border-[var(--emerald-primary)]' 
+                    : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--cream-accent)]'
+                }`}
+              >
+                Left to Right (Standard)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPageTurnDirection('rtl')}
+                className={`flex-1 py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
+                  pageTurnDirection === 'rtl' 
+                    ? 'bg-[var(--emerald-light)] text-[var(--emerald-primary)] border-[var(--emerald-primary)]' 
+                    : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--cream-accent)]'
+                }`}
+              >
+                Right to Left (Manga)
+              </button>
+            </div>
+          </div>
+
+          {/* Typography Font Size Slider */}
           <div className="pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
             <div className="flex justify-between text-xs font-semibold text-[var(--text-primary)] mb-1">
               <span>Text Size</span>
@@ -339,6 +396,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
             />
           </div>
 
+          {/* Orientation Spread Toggle */}
           <div className="pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
             <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
               Reading Spread:
@@ -367,30 +425,31 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         </div>
       )}
 
-      {/* Main Reading Stage */}
+      {/* Main Reading Stage (Smooth 3D Book Experience) */}
       <main 
         className="reader-stage flex-1 flex items-center justify-center p-3 sm:p-6 relative overflow-hidden"
         style={{
           background: 'radial-gradient(ellipse at center, rgba(5, 150, 105, 0.03) 0%, transparent 70%)'
         }}
       >
+        {/* Subtle Tap Zones on Left and Right edges */}
         <div 
-          onClick={handleTurnPrev}
+          onClick={pageTurnDirection === 'ltr' ? handleTurnBackward : handleTurnForward}
           className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 z-20 cursor-w-resize"
-          title="Tap or swipe right to turn back"
+          title={pageTurnDirection === 'ltr' ? "Tap to turn backward" : "Tap to turn forward"}
         />
         <div 
-          onClick={handleTurnNext}
+          onClick={pageTurnDirection === 'ltr' ? handleTurnForward : handleTurnBackward}
           className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 z-20 cursor-e-resize"
-          title="Tap or swipe left to turn forward"
+          title={pageTurnDirection === 'ltr' ? "Tap to turn forward" : "Tap to turn backward"}
         />
 
-        {/* 3D Book Container */}
+        {/* 3D Book Paper Container */}
         <div 
           className="relative flex items-stretch max-w-4xl w-full h-[76vh] sm:h-[80vh] rounded-2xl overflow-hidden shadow-xl transition-all duration-300"
           style={{
             boxShadow: '0 20px 50px -10px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--border-color)',
-            transform: `perspective(2000px) rotateY(${dragRotation * 0.1}deg)`
+            transform: `perspective(2200px) rotateY(${dragRotation * 0.1}deg)`
           }}
         >
           {isLandscape && <div className="book-spine-crease" />}
@@ -409,14 +468,14 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
           >
             <div className="flex justify-between items-center text-[10px] font-sans font-medium text-[var(--text-muted)] pb-3 border-b border-black/5 dark:border-white/5 select-none">
               <span className="truncate max-w-[200px]">{book.title}</span>
-              <span>{book.isPdf ? 'PDF Vector Page' : 'Chapter Content'}</span>
+              <span>{book.isPdf ? 'PDF Vector View' : 'Chapter Content'}</span>
             </div>
 
             <div className="my-auto whitespace-pre-line py-3">
               {book.isPdf && (
                 <div className="mb-3 inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 select-none">
                   <FileText className="w-3 h-3" />
-                  <span>PDF Document • 3D Swipe Curl</span>
+                  <span>PDF Document • 3D Real Page Curl</span>
                 </div>
               )}
               {getPageText(leftPageNum)}

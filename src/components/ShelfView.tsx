@@ -95,7 +95,7 @@ export const ShelfView: React.FC<ShelfViewProps> = ({
   const getShelfDescription = () => {
     switch (shelf) {
       case 'currently_reading':
-        return 'Books and documents currently in progress, ordered by most recently opened.';
+        return 'Documents with active reading progress, ordered by most recently opened.';
       case 'favorites':
         return 'Your favorite books and marked documents.';
       case 'already_read':
@@ -107,20 +107,20 @@ export const ShelfView: React.FC<ShelfViewProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       {/* Shelf Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-5 pb-3 border-b gap-2" style={{ borderColor: 'var(--border-color)' }}>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 pb-4 border-b gap-3" style={{ borderColor: 'var(--border-color)' }}>
         <div>
           <h2 className="text-xl sm:text-2xl font-serif font-bold text-[var(--text-primary)]">
             {getShelfTitle()}
           </h2>
-          <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-0.5">
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
             {getShelfDescription()}
           </p>
         </div>
 
         <span 
-          className="text-xs font-semibold px-2.5 py-0.5 rounded-full self-start sm:self-auto" 
+          className="text-xs font-semibold px-3 py-1 rounded-full self-start sm:self-auto" 
           style={{ backgroundColor: 'var(--emerald-light)', color: 'var(--emerald-primary)' }}
         >
           {filtered.length} {filtered.length === 1 ? 'item' : 'items'}
@@ -129,13 +129,13 @@ export const ShelfView: React.FC<ShelfViewProps> = ({
 
       {/* Format Filter Pills (Shown when there are books) */}
       {shelf === 'all' && books.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar mb-5 pb-1">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar mb-6 pb-1">
           <Filter className="w-3.5 h-3.5 text-[var(--text-muted)] flex-shrink-0" />
           {formatChips.map((chip) => (
             <button
               key={chip.id}
               onClick={() => setSelectedFormat(chip.id)}
-              className="px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all border cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer"
               style={{
                 backgroundColor: selectedFormat === chip.id ? 'var(--emerald-primary)' : 'var(--bg-card)',
                 color: selectedFormat === chip.id ? '#FFFFFF' : 'var(--text-secondary)',
@@ -148,9 +148,9 @@ export const ShelfView: React.FC<ShelfViewProps> = ({
         </div>
       )}
 
-      {/* Books Card List / Compact Grid */}
+      {/* Books Card List / Spacious Responsive Grid (2 to 3 columns on desktop for optimal reading width) */}
       {filtered.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
           {filtered.map((book) => (
             <BookCard
               key={book.id}
@@ -162,7 +162,7 @@ export const ShelfView: React.FC<ShelfViewProps> = ({
           ))}
         </div>
       ) : (
-        /* Clean Empty State */
+        /* Clean Empty State with Drag-and-Drop Dropzone */
         <div 
           onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
           onDragLeave={() => setIsDragOver(false)}
@@ -177,24 +177,24 @@ export const ShelfView: React.FC<ShelfViewProps> = ({
               }
             }
           }}
-          className={`rounded-2xl p-8 sm:p-14 text-center border-2 border-dashed flex flex-col items-center justify-center my-4 transition-all duration-200 ${
+          className={`rounded-3xl p-10 sm:p-16 text-center border-2 border-dashed flex flex-col items-center justify-center my-6 transition-all duration-200 ${
             isDragOver ? 'border-[var(--emerald-primary)] bg-[var(--emerald-light)]' : 'border-[var(--border-color)] bg-[var(--bg-card)]'
           }`}
         >
           <div 
-            className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3 text-[var(--emerald-primary)] shadow-sm"
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 text-[var(--emerald-primary)] shadow-sm"
             style={{ backgroundColor: 'var(--emerald-light)' }}
           >
-            <UploadCloud className="w-7 h-7" />
+            <UploadCloud className="w-8 h-8" />
           </div>
 
-          <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)] mb-1">
+          <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">
             {shelf === 'currently_reading' ? 'No books currently in progress' :
              shelf === 'favorites' ? 'No favorite books yet' :
              shelf === 'already_read' ? 'No completed books yet' :
              'Your library is ready for documents'}
           </h3>
-          <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-sm mb-5 leading-relaxed">
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-md mb-6 leading-relaxed">
             {shelf === 'all' 
               ? 'Books stay on your device. Click the button below or drop files here to add EPUB, PDF, Kindle, MOBI, DOCX, or comic files.'
               : 'Open any book or document from your device to begin reading.'}
@@ -203,7 +203,7 @@ export const ShelfView: React.FC<ShelfViewProps> = ({
           <button
             type="button"
             onClick={onTriggerAdd}
-            className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white transition-all shadow-md hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer"
+            className="px-6 py-3 rounded-2xl text-xs sm:text-sm font-bold text-white transition-all shadow-md hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer"
             style={{ backgroundColor: 'var(--emerald-primary)' }}
           >
             <Plus className="w-4 h-4" />

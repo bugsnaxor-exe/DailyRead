@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { UpdateState } from '../types';
-import { Sparkles, Check, ShieldCheck, RefreshCw, X } from 'lucide-react';
+import { Sparkles, Check, ShieldCheck, RefreshCw, X, Clock } from 'lucide-react';
 
 interface UpdateDropdownProps {
   isOpen: boolean;
@@ -31,7 +31,7 @@ export const UpdateDropdown: React.FC<UpdateDropdownProps> = ({
       setDownloadProgress((prev) => {
         if (prev >= 98) {
           clearInterval(interval);
-          setStatusMessage('Installing & restarting...');
+          setStatusMessage('Installing & restarting in-place...');
           setTimeout(() => {
             onApplyUpdate(latestRelease.version);
             onClose();
@@ -47,7 +47,7 @@ export const UpdateDropdown: React.FC<UpdateDropdownProps> = ({
 
   return (
     <div 
-      className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl p-5 border shadow-2xl z-50 animate-fadeIn transition-all"
+      className="absolute right-0 top-full mt-2.5 w-84 sm:w-96 rounded-2xl p-5 border shadow-2xl z-50 animate-fadeIn transition-all"
       style={{
         backgroundColor: 'var(--bg-card)',
         borderColor: 'var(--emerald-border)',
@@ -57,14 +57,14 @@ export const UpdateDropdown: React.FC<UpdateDropdownProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b mb-3" style={{ borderColor: 'var(--border-color)' }}>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[var(--emerald-light)] text-[var(--emerald-primary)] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-xl bg-[var(--emerald-light)] text-[var(--emerald-primary)] flex items-center justify-center font-bold">
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
-            <h4 className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">
-              App Update Available
+            <h4 className="text-sm font-bold text-[var(--text-primary)]">
+              Updated App Available
             </h4>
-            <span className="text-[10px] text-[var(--text-muted)] font-mono">
+            <span className="text-[11px] text-[var(--text-muted)] font-mono">
               v{currentVersion} → v{latestRelease.version}
             </span>
           </div>
@@ -73,7 +73,7 @@ export const UpdateDropdown: React.FC<UpdateDropdownProps> = ({
         <button
           type="button"
           onClick={onClose}
-          className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--cream-accent)] cursor-pointer"
+          className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--cream-accent)] cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
@@ -81,31 +81,31 @@ export const UpdateDropdown: React.FC<UpdateDropdownProps> = ({
 
       {/* Description */}
       <p className="text-xs text-[var(--text-secondary)] mb-3 leading-relaxed">
-        {latestRelease.title}. Cumulative update: all new features are installed at once.
+        {latestRelease.title}. All updates are cumulative and will be applied at once in-place.
       </p>
 
       {/* Release Notes */}
       <div 
-        className="p-2.5 rounded-xl mb-4 max-h-28 overflow-y-auto space-y-1 border"
+        className="p-3 rounded-xl mb-4 max-h-32 overflow-y-auto space-y-1.5 border"
         style={{
           backgroundColor: 'var(--bg-surface)',
           borderColor: 'var(--border-color)'
         }}
       >
         {latestRelease.notes.map((note, idx) => (
-          <div key={idx} className="flex items-start gap-1.5 text-[11px] text-[var(--text-secondary)]">
-            <Check className="w-3 h-3 text-[var(--emerald-accent)] flex-shrink-0 mt-0.5" />
+          <div key={idx} className="flex items-start gap-2 text-xs text-[var(--text-secondary)]">
+            <Check className="w-3.5 h-3.5 text-[var(--emerald-accent)] flex-shrink-0 mt-0.5" />
             <span>{note}</span>
           </div>
         ))}
       </div>
 
-      {/* Progress Bar (during download) */}
+      {/* Progress Bar during download */}
       {isDownloading ? (
         <div className="space-y-2">
-          <div className="flex justify-between text-[11px] font-bold">
+          <div className="flex justify-between text-xs font-bold">
             <span className="flex items-center gap-1.5 text-[var(--emerald-primary)]">
-              <RefreshCw className="w-3 h-3 animate-spin" />
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
               {statusMessage}
             </span>
             <span>{downloadProgress}%</span>
@@ -128,27 +128,28 @@ export const UpdateDropdown: React.FC<UpdateDropdownProps> = ({
           </div>
         </div>
       ) : (
-        /* Action Buttons: Install Update & Do Later */
+        /* Action Buttons */
         <div className="flex items-center gap-2 pt-1">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all hover:bg-[var(--cream-accent)] text-[var(--text-secondary)] cursor-pointer"
+            className="flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all hover:bg-[var(--cream-accent)] text-[var(--text-secondary)] cursor-pointer flex items-center justify-center gap-1.5"
             style={{ borderColor: 'var(--border-color)' }}
           >
-            Do Later
+            <Clock className="w-3.5 h-3.5" />
+            <span>Update Later</span>
           </button>
 
           <button
             type="button"
             onClick={handleStartUpdate}
-            className="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-white transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 cursor-pointer"
+            className="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold text-white transition-all shadow-md hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 cursor-pointer"
             style={{
               backgroundColor: 'var(--emerald-primary)'
             }}
           >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Install ({latestRelease.downloadSize})</span>
+            <ShieldCheck className="w-4 h-4" />
+            <span>Install Updated App</span>
           </button>
         </div>
       )}

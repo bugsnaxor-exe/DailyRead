@@ -1,28 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  /* Crisp Light Emerald & Cream White Palette */
+  /* Crisp Light Emerald & Cream White Theme */
   --bg-primary: #FAF8F2;       /* Cream White Paper */
-  --bg-surface: #F3EFE6;       /* Soft Parchment */
-  --bg-card: #FFFFFF;          /* Pure Crisp White Card */
-  --bg-card-hover: #F8FAF7;
+  --bg-surface: #F4EFE6;       /* Warm Ivory Surface */
+  --bg-card: #FFFFFF;          /* Pure White Card */
+  --bg-card-hover: #F8FAF7;    /* Subtle Mint-Cream Glow */
   
   --emerald-primary: #059669;   /* Vibrant Light Emerald */
   --emerald-hover: #047857;     /* Deep Emerald Accent */
-  --emerald-light: #ECFDF5;     /* Mint Cream Wash */
+  --emerald-light: #ECFDF5;     /* Fresh Mint Cream Wash */
   --emerald-border: #A7F3D0;    /* Soft Mint Border */
   --emerald-accent: #10B981;    /* Bright Emerald Highlight */
   
   --cream-accent: #EFE9DE;
   --cream-border: #E5DFD3;
   
-  --text-primary: #11261F;      /* Emerald Charcoal */
+  --text-primary: #11261F;      /* High-Contrast Emerald Charcoal */
   --text-secondary: #4A6357;    /* Slate Sage */
-  --text-muted: #7E978C;        /* Muted Emerald Sage */
+  --text-muted: #7E978C;        /* Subdued Sage */
   
   --border-color: #E8E2D6;
   --shadow-sm: 0 1px 3px rgba(5, 150, 105, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 4px 12px rgba(5, 150, 105, 0.08);
+  --shadow-md: 0 4px 14px rgba(5, 150, 105, 0.08);
   --shadow-lg: 0 12px 28px rgba(5, 150, 105, 0.12);
   
   --reader-paper: #FAF7EF;
@@ -67,27 +67,31 @@
   box-sizing: border-box;
 }
 
-html, body {
+html, body, #root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-sans);
-  min-height: 100vh;
+  text-align: left;
   transition: background-color 0.2s ease, color 0.2s ease;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Compact Book Card 3D Spine and Cover */
+/* Book Card 3D Spine and Elevation */
 .book-cover-container {
-  perspective: 700px;
+  perspective: 800px;
 }
 
 .book-cover-3d {
   position: relative;
-  border-radius: 3px 6px 6px 3px;
+  border-radius: 4px 8px 8px 4px;
   box-shadow: 
-    -2px 0 4px rgba(0, 0, 0, 0.12),
-    2px 4px 10px rgba(0, 0, 0, 0.18);
+    -2px 0 5px rgba(0, 0, 0, 0.12),
+    3px 6px 12px rgba(0, 0, 0, 0.18);
   transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s ease;
 }
 
@@ -97,45 +101,45 @@ html, body {
   top: 0;
   left: 0;
   bottom: 0;
-  width: 4px;
+  width: 5px;
   background: linear-gradient(
     90deg, 
     rgba(255, 255, 255, 0.25) 0%, 
     rgba(0, 0, 0, 0.18) 50%, 
     rgba(255, 255, 255, 0.08) 100%
   );
-  border-radius: 3px 0 0 3px;
+  border-radius: 4px 0 0 4px;
   pointer-events: none;
 }
 
 .book-card-item:hover .book-cover-3d {
-  transform: translateY(-2px) rotateY(-5deg) scale(1.02);
+  transform: translateY(-2px) rotateY(-6deg) scale(1.03);
   box-shadow: 
-    -3px 2px 6px rgba(0, 0, 0, 0.15),
-    4px 8px 16px rgba(5, 150, 105, 0.22);
+    -4px 2px 8px rgba(0, 0, 0, 0.16),
+    5px 10px 20px rgba(5, 150, 105, 0.22);
 }
 
-/* Realistic 3D Interactive Page Turn Curl */
+/* 3D Realistic Page Curl Turning Animations */
 .reader-stage {
-  perspective: 2400px;
+  perspective: 2600px;
   transform-style: preserve-3d;
 }
 
 .page-sheet {
   background-color: var(--reader-paper);
   color: var(--reader-text);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
   transform-origin: left center;
-  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease;
+  transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.45s ease;
   will-change: transform;
 }
 
 .page-sheet.turn-left {
-  animation: pageTurnLeft 0.48s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  animation: pageTurnLeft 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
 .page-sheet.turn-right {
-  animation: pageTurnRight 0.48s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  animation: pageTurnRight 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
 @keyframes pageTurnLeft {
@@ -144,7 +148,7 @@ html, body {
     box-shadow: 0 2px 10px rgba(0,0,0,0.06);
   }
   50% {
-    box-shadow: -15px 8px 35px rgba(0,0,0,0.22);
+    box-shadow: -18px 10px 40px rgba(0,0,0,0.25);
   }
   100% {
     transform: rotateY(-180deg);
@@ -158,7 +162,7 @@ html, body {
     box-shadow: 0 2px 10px rgba(0,0,0,0.06);
   }
   50% {
-    box-shadow: 15px 8px 35px rgba(0,0,0,0.22);
+    box-shadow: 18px 10px 40px rgba(0,0,0,0.25);
   }
   100% {
     transform: rotateY(0deg);
@@ -172,12 +176,12 @@ html, body {
   top: 0;
   bottom: 0;
   left: 50%;
-  width: 24px;
+  width: 28px;
   transform: translateX(-50%);
   background: linear-gradient(
     90deg, 
     rgba(0, 0, 0, 0.03) 0%, 
-    rgba(0, 0, 0, 0.16) 50%, 
+    rgba(0, 0, 0, 0.18) 50%, 
     rgba(0, 0, 0, 0.03) 100%
   );
   pointer-events: none;
@@ -187,12 +191,12 @@ html, body {
 /* Floating Action Button */
 .fab-button {
   background-color: var(--emerald-primary);
-  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.35);
+  box-shadow: 0 6px 20px rgba(5, 150, 105, 0.35);
   transition: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .fab-button:hover {
   transform: scale(1.06) translateY(-2px);
-  box-shadow: 0 10px 24px rgba(5, 150, 105, 0.45);
+  box-shadow: 0 10px 26px rgba(5, 150, 105, 0.45);
 }
 
 .backdrop-blur-reader {

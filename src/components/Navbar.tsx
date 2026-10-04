@@ -83,11 +83,11 @@ export const Navbar: React.FC<NavbarProps> = ({
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top Header Row */}
-        <div className="flex items-center justify-between h-15 sm:h-18 gap-4">
+        <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
           {/* Logo & App Title */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             <div 
-              className="w-9 h-9 rounded-xl flex items-center justify-center font-serif font-bold text-white text-base shadow-sm"
+              className="w-10 h-10 rounded-xl flex items-center justify-center font-serif font-bold text-white text-base shadow-sm"
               style={{
                 backgroundColor: 'var(--emerald-primary)'
               }}
@@ -95,10 +95,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               V
             </div>
             <div>
-              <span className="font-serif text-base sm:text-lg font-bold tracking-tight text-[var(--text-primary)]">
+              <span className="font-serif text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">
                 Verdant<span style={{ color: 'var(--emerald-primary)' }}>Reader</span>
               </span>
-              <span className="block text-[10px] font-medium tracking-wide uppercase text-[var(--text-muted)]">
+              <span className="block text-[11px] font-medium tracking-wide uppercase text-[var(--text-muted)]">
                 Universal Shelf & Reader
               </span>
             </div>
@@ -107,13 +107,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Search Box */}
           <div className="flex-1 max-w-md hidden md:block">
             <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder="Search by title, author, or format..."
-                className="w-full pl-9 pr-3.5 py-1.5 text-xs sm:text-sm rounded-xl outline-none transition-all border"
+                className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm rounded-xl outline-none transition-all border"
                 style={{
                   backgroundColor: 'var(--bg-card)',
                   borderColor: 'var(--border-color)',
@@ -123,28 +123,28 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Upper Right Corner Controls: Update notification & Theme Switcher */}
+          {/* Upper Right Corner: Option to update later & Theme switch */}
           <div className="flex items-center gap-2 relative" ref={dropdownRef}>
-            {/* Upper Right Update Notification Icon */}
+            {/* Upper Right Corner Option: 'Update Later' badge/button */}
             {updateState.hasUpdate && (
               <button
                 type="button"
                 onClick={() => setIsUpdateOpen(!isUpdateOpen)}
-                className="relative p-2 rounded-xl border transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all hover:scale-105 active:scale-95 cursor-pointer"
                 style={{
                   backgroundColor: isUpdateOpen ? 'var(--emerald-light)' : 'var(--bg-card)',
                   borderColor: isUpdateOpen ? 'var(--emerald-border)' : 'var(--border-color)',
                   color: 'var(--emerald-primary)'
                 }}
-                title={`New update v${updateState.latestRelease?.version} available. Tap to view.`}
+                title="Tap to see updated app notification & installation options"
               >
-                <Sparkles className="w-4 h-4" />
-                {/* Emerald pulse notification dot */}
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[var(--emerald-primary)] ring-2 ring-[var(--bg-primary)] animate-pulse" />
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Update Later</span>
+                <span className="w-2 h-2 rounded-full bg-[var(--emerald-primary)] ml-0.5" />
               </button>
             )}
 
-            {/* Dropdown Menu attached to the Upper Right Corner */}
+            {/* Notification Dropdown for Upper Right Corner */}
             <UpdateDropdown
               isOpen={isUpdateOpen}
               onClose={() => setIsUpdateOpen(false)}
@@ -156,7 +156,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={onToggleTheme}
-              className="p-2 rounded-xl transition-all duration-200 border hover:scale-105 active:scale-95 cursor-pointer"
+              className="p-2 sm:p-2.5 rounded-xl transition-all duration-200 border hover:scale-105 active:scale-95 cursor-pointer"
               style={{
                 backgroundColor: 'var(--bg-card)',
                 borderColor: 'var(--border-color)',
@@ -174,8 +174,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Mobile Search Bar Row */}
-        <div className="pb-2.5 md:hidden">
+        {/* Mobile Search Bar */}
+        <div className="pb-3 md:hidden">
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
             <input
@@ -183,7 +183,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search books..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl outline-none border"
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl outline-none border"
               style={{
                 backgroundColor: 'var(--bg-card)',
                 borderColor: 'var(--border-color)',
@@ -194,7 +194,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Navigation Tabs (Currently Reading, Books & Documents, Favorites, Already Read) */}
-        <nav className="flex space-x-1 sm:space-x-1.5 overflow-x-auto no-scrollbar pb-2.5">
+        <nav className="flex space-x-1.5 sm:space-x-2 overflow-x-auto no-scrollbar pb-3">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = currentShelf === tab.id;
@@ -202,16 +202,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={tab.id}
                 onClick={() => onSelectShelf(tab.id)}
-                className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer"
+                className="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer"
                 style={{
                   backgroundColor: isActive ? 'var(--emerald-primary)' : 'transparent',
                   color: isActive ? '#FFFFFF' : 'var(--text-secondary)'
                 }}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className="w-4 h-4" />
                 <span>{tab.label}</span>
                 <span 
-                  className="text-[10px] px-1.5 py-0.2 rounded-full font-bold ml-0.5"
+                  className="text-[11px] px-2 py-0.5 rounded-full font-bold ml-1"
                   style={{
                     backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : 'var(--cream-accent)',
                     color: isActive ? '#FFFFFF' : 'var(--text-secondary)'

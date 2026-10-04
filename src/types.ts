@@ -21,6 +21,8 @@ export type ThemeMode = 'light' | 'dark';
 
 export type PageTurnMode = '3d-curl' | 'slide' | 'tap';
 
+export type PageTurnDirection = 'ltr' | 'rtl'; // Left-to-Right (Western) vs Right-to-Left (Manga/RTL)
+
 export type OrientationMode = 'auto' | 'portrait' | 'landscape';
 
 export interface Book {
