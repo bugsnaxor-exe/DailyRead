@@ -1,0 +1,204 @@
+@import "tailwindcss";
+
+:root {
+  /* Clean Minimalist Cream & Emerald Light Mode */
+  --bg-primary: #FAF7F0;
+  --bg-surface: #F3ECE2;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #FCFAF6;
+  
+  --emerald-primary: #0F5132;
+  --emerald-hover: #0B3D25;
+  --emerald-light: #EBF7EE;
+  --emerald-border: #C6E9D0;
+  --emerald-accent: #059669;
+  
+  --cream-accent: #EFE8DC;
+  --cream-dark: #D8CFBE;
+  
+  --text-primary: #1C2420;
+  --text-secondary: #586B62;
+  --text-muted: #8FA298;
+  
+  --border-color: #E6DED2;
+  --shadow-sm: 0 1px 3px rgba(15, 81, 50, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 14px rgba(15, 81, 50, 0.07);
+  --shadow-lg: 0 12px 30px rgba(15, 81, 50, 0.12);
+  
+  --reader-paper: #FAF6EE;
+  --reader-text: #212925;
+  
+  --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: 'Lora', Georgia, serif;
+}
+
+[data-theme='dark'] {
+  /* Minimalist Deep Forest & Luminous Emerald Dark Mode */
+  --bg-primary: #0A1410;
+  --bg-surface: #0F1E19;
+  --bg-card: #13241E;
+  --bg-card-hover: #182E27;
+  
+  --emerald-primary: #10B981;
+  --emerald-hover: #34D399;
+  --emerald-light: #0D3326;
+  --emerald-border: #135E46;
+  --emerald-accent: #34D399;
+  
+  --cream-accent: #172E25;
+  --cream-dark: #1E3A30;
+  
+  --text-primary: #F3F7F5;
+  --text-secondary: #9DB4A9;
+  --text-muted: #677F74;
+  
+  --border-color: #1A362C;
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.65);
+  
+  --reader-paper: #0E1A15;
+  --reader-text: #E5EFEA;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  transition: background-color 0.25s ease, color 0.25s ease;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Book Cover Elevation & Spine */
+.book-cover-container {
+  perspective: 1000px;
+}
+
+.book-cover-3d {
+  position: relative;
+  border-radius: 4px 10px 10px 4px;
+  box-shadow: 
+    -2px 0 5px rgba(0, 0, 0, 0.12),
+    3px 6px 16px rgba(0, 0, 0, 0.18);
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.28s ease;
+}
+
+.book-cover-3d::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 5px;
+  background: linear-gradient(
+    90deg, 
+    rgba(255, 255, 255, 0.25) 0%, 
+    rgba(0, 0, 0, 0.2) 50%, 
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  border-radius: 4px 0 0 4px;
+  pointer-events: none;
+}
+
+.book-card-item:hover .book-cover-3d {
+  transform: translateY(-2px) rotateY(-6deg) scale(1.02);
+  box-shadow: 
+    -4px 2px 8px rgba(0, 0, 0, 0.18),
+    6px 12px 22px rgba(15, 81, 50, 0.22);
+}
+
+/* 3D Page Curl Engine */
+.reader-stage {
+  perspective: 2000px;
+  transform-style: preserve-3d;
+}
+
+.page-sheet {
+  background-color: var(--reader-paper);
+  color: var(--reader-text);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  transform-origin: left center;
+  transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.45s ease;
+  will-change: transform;
+}
+
+.page-sheet.turn-left {
+  animation: pageTurnLeft 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.page-sheet.turn-right {
+  animation: pageTurnRight 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes pageTurnLeft {
+  0% {
+    transform: rotateY(0deg);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+  50% {
+    box-shadow: -15px 10px 40px rgba(0,0,0,0.25);
+  }
+  100% {
+    transform: rotateY(-180deg);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+}
+
+@keyframes pageTurnRight {
+  0% {
+    transform: rotateY(-180deg);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+  50% {
+    box-shadow: 15px 10px 40px rgba(0,0,0,0.25);
+  }
+  100% {
+    transform: rotateY(0deg);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  }
+}
+
+/* Landscape Book Spine Crease */
+.book-spine-crease {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 26px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    90deg, 
+    rgba(0, 0, 0, 0.04) 0%, 
+    rgba(0, 0, 0, 0.2) 50%, 
+    rgba(0, 0, 0, 0.04) 100%
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Floating Action Button */
+.fab-button {
+  background-color: var(--emerald-primary);
+  box-shadow: 0 8px 24px rgba(15, 81, 50, 0.35);
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.fab-button:hover {
+  transform: scale(1.08) translateY(-2px);
+  box-shadow: 0 12px 30px rgba(15, 81, 50, 0.45);
+}
+.fab-button:active {
+  transform: scale(0.96);
+}
+
+.backdrop-blur-reader {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}

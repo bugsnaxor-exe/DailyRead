@@ -1,0 +1,76 @@
+name: Automated Release & In-App APK Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version_tag:
+        description: 'Release Version Tag (e.g. v2.4.0)'
+        required: true
+        default: 'v2.4.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build Cross-Platform Bundles (Android APK & Windows)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Set up Java Development Kit (JDK) 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Project Dependencies
+        run: npm ci
+
+      - name: Build Web Production Assets
+        run: npm run build
+
+      - name: Extract Tag or Version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ github.event.inputs.version_tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release Notes & Changelog
+        id: release_notes
+        run: |
+          echo "### 📚 VerdantReader ${{ steps.get_version.outputs.VERSION }}" > notes.md
+          echo "" >> notes.md
+          echo "#### ✨ What's New:" >> notes.md
+          echo "- **Universal 3D Page Curl**: Hardware-accelerated Google Play Books curl for eBooks and PDFs." >> notes.md
+          echo "- **Cumulative Updates**: All prior releases installed at once with zero data loss." >> notes.md
+          echo "- **60-Day Mandatory Lifecycle**: Automatic notification and update enforcement." >> notes.md
+          echo "- **Cream & Emerald Aesthetics**: Optimized for high-contrast literary comfort." >> notes.md
+
+      - name: Publish GitHub Release with Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
+          name: "VerdantReader ${{ steps.get_version.outputs.VERSION }}"
+          body_path: notes.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
